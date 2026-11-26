@@ -13,6 +13,8 @@
 #   - The sensor's span NIC sits on an otherwise-unused VLAN tag, so it never
 #     participates in real switching.
 #   - tc rules die when a VM restarts (new tap). The systemd timer re-applies.
+#   - A stale mirror filter (left after a sensor reboot) is cleared before the
+#     current one is added.
 #
 # Usage:
 #   sudo RANGE_ID=AL ./ot-span.sh setup     # add sensor NIC, apply, install timer
@@ -111,6 +113,8 @@ cmd_apply() {
       if tc filter show dev "$tap" ingress 2>/dev/null | grep -q "mirred.*${dst}"; then
         continue
       fi
+      # clear a stale mirror filter (e.g. left over from before a sensor reboot)
+      tc filter del dev "$tap" parent ffff: prio 49 2>/dev/null || true
       tc qdisc replace dev "$tap" handle ffff: ingress
       tc filter add dev "$tap" parent ffff: protocol all prio 49 matchall \
         action mirred egress mirror dev "$dst"
