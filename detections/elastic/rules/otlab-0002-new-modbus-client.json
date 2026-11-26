@@ -1,0 +1,33 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0002-new-modbus-client",
+  "name": "OT Lab - New Modbus/TCP client talking to the control zone",
+  "description": "A source IP that has not spoken Modbus/TCP in the last 14 days started talking to a Level 1 device. OT traffic is highly deterministic, so any new talker is worth a look.",
+  "type": "new_terms",
+  "language": "kuery",
+  "risk_score": 47,
+  "severity": "medium",
+  "index": [
+    "logs-zeek.modbus-*"
+  ],
+  "query": "destination.ip: \"__NET__.40.0/24\"",
+  "new_terms_fields": [
+    "source.ip"
+  ],
+  "history_window_start": "now-14d",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0846 Remote System Discovery",
+    "Tactic: Discovery",
+    "Data Source: Zeek"
+  ]
+}
