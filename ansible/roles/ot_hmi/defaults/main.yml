@@ -1,0 +1,6 @@
+---
+ot_net_prefix: "{{ ansible_default_ipv4.address.split('.')[0:2] | join('.') }}"
+ot_plc_ip: "{{ ot_net_prefix }}.40.10"
+ot_hmi_port: 8080
+ot_hmi_dir: /opt/ot-hmi
+ot_hmi_log_dir: /var/log/ot-hmi

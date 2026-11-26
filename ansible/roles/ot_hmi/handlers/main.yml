@@ -1,0 +1,6 @@
+---
+- name: Restart ot-hmi
+  ansible.builtin.systemd:
+    name: ot-hmi
+    state: restarted
+    daemon_reload: true

@@ -1,0 +1,17 @@
+[Unit]
+Description=OT-ICS lab - water tank HMI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=othmi
+Environment=OT_PLC_IP={{ ot_plc_ip }}
+Environment=OT_HMI_PORT={{ ot_hmi_port }}
+Environment=OT_HMI_AUDIT={{ ot_hmi_log_dir }}/actions.jsonl
+WorkingDirectory={{ ot_hmi_dir }}
+ExecStart=/usr/bin/python3 {{ ot_hmi_dir }}/hmi.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
