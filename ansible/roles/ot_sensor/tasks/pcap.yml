@@ -1,0 +1,21 @@
+---
+- name: pcap directory
+  ansible.builtin.file:
+    path: "{{ ot_pcap_dir }}"
+    state: directory
+    mode: "0750"
+
+- name: Rolling pcap unit
+  ansible.builtin.template:
+    src: pcap-ring.service.j2
+    dest: /etc/systemd/system/pcap-ring.service
+    mode: "0644"
+  notify: Restart pcap-ring
+
+- name: Enable rolling pcap
+  ansible.builtin.systemd:
+    name: pcap-ring
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ot_span_present

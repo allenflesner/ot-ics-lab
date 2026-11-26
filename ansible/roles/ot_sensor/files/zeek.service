@@ -1,0 +1,14 @@
+[Unit]
+Description=Zeek network security monitor (zeekctl)
+After=network-online.target span-iface.service
+Wants=network-online.target
+Requires=span-iface.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/zeek/bin/zeekctl deploy
+ExecStop=/opt/zeek/bin/zeekctl stop
+
+[Install]
+WantedBy=multi-user.target

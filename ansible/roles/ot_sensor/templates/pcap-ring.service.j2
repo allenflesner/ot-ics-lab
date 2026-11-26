@@ -1,0 +1,12 @@
+[Unit]
+Description=Rolling full-packet capture on {{ ot_sensor_span_iface }} for Wireshark analysis
+After=span-iface.service
+Requires=span-iface.service
+
+[Service]
+ExecStart=/usr/bin/tcpdump -i {{ ot_sensor_span_iface }} -n -s 0 -Z root -C {{ ot_pcap_file_mb }} -W {{ ot_pcap_files }} -w {{ ot_pcap_dir }}/otlab.pcap {{ ot_sensor_bpf }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

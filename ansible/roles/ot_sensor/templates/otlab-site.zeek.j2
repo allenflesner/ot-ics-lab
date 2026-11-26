@@ -1,0 +1,21 @@
+# Managed by ot_sensor role
+@load policy/tuning/json-logs.zeek
+@load ./ot-lab.zeek
+
+# Drop Elastic Agent chatter from capture (ANDed with any other filters)
+redef restrict_filters += { ["otlab-noise"] = "{{ ot_sensor_bpf }}" };
+
+# Hosts allowed to WRITE to the PLC: HMI-01, field I/O sim, EWS-01.
+# Anything else raises OTLab::Unauthorized_Modbus_Write
+redef OTLab::authorized_writers += { {{ ot_assets.hmi }}, {{ ot_assets.field_io }}, {{ ot_assets.ews }} };
+
+# Hosts expected to speak Modbus at all
+redef OTLab::known_modbus_clients += { {{ ot_assets.hmi }}, {{ ot_assets.field_io }}, {{ ot_assets.ews }} };
+
+# Purdue conduit policy: only these zones may open connections into Level 1
+redef OTLab::control_net = {{ ot_nets.control }};
+redef OTLab::conduit_sources += { {{ ot_nets.supervisory }}, {{ ot_nets.control }}, {{ ot_nets.soc }} };
+
+# Ludus management (Ansible over the NAT / WireGuard nets). A known, documented
+# exception - in a real plant this would be your OT patching/management path.
+redef OTLab::conduit_sources += { {{ ot_ludus_mgmt_nets | join(', ') }} };

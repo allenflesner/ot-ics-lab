@@ -1,0 +1,118 @@
+---
+- name: Zeek OBS repo key
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      curl -fsSL https://download.opensuse.org/repositories/security:zeek/Debian_{{ ansible_distribution_major_version }}/Release.key
+      | gpg --dearmor -o /etc/apt/trusted.gpg.d/security_zeek.gpg
+    executable: /bin/bash
+    creates: /etc/apt/trusted.gpg.d/security_zeek.gpg
+
+- name: Zeek OBS repo
+  ansible.builtin.apt_repository:
+    repo: "deb http://download.opensuse.org/repositories/security:/zeek/Debian_{{ ansible_distribution_major_version }}/ /"
+    filename: security-zeek
+    state: present
+
+- name: Install Zeek
+  ansible.builtin.apt:
+    name: zeek
+    state: present
+    update_cache: true
+
+- name: Zeek dev headers for compiled parsers (best effort)
+  ansible.builtin.apt:
+    name: [zeek-core-dev, zeek-spicy-dev]
+    state: present
+  failed_when: false
+
+- name: Zeek on PATH
+  ansible.builtin.copy:
+    dest: /etc/profile.d/zeek.sh
+    mode: "0644"
+    content: 'export PATH=/opt/zeek/bin:$PATH'
+
+- name: node.cfg
+  ansible.builtin.template:
+    src: node.cfg.j2
+    dest: /opt/zeek/etc/node.cfg
+    mode: "0644"
+  notify: Deploy zeek
+
+- name: networks.cfg
+  ansible.builtin.template:
+    src: networks.cfg.j2
+    dest: /opt/zeek/etc/networks.cfg
+    mode: "0644"
+  notify: Deploy zeek
+
+- name: zkg autoconfig
+  ansible.builtin.command:
+    cmd: /opt/zeek/bin/zkg autoconfig --force
+  changed_when: false
+
+- name: Install required Zeek packages
+  ansible.builtin.shell:
+    cmd: >-
+      /opt/zeek/bin/zkg list installed | grep -qi '/{{ item }} ' ||
+      /opt/zeek/bin/zkg install --force --skiptests {{ item }}
+    executable: /bin/bash
+  loop: "{{ ot_zeek_packages_required }}"
+  register: ot_zkg_req
+  changed_when: "'Installing' in ot_zkg_req.stdout or 'Installed' in ot_zkg_req.stdout"
+  notify: Deploy zeek
+
+- name: Install optional Zeek packages (compiled; best effort)
+  ansible.builtin.shell:
+    cmd: >-
+      /opt/zeek/bin/zkg list installed | grep -qi '/{{ item }} ' ||
+      timeout 1800 /opt/zeek/bin/zkg install --force --skiptests {{ item }}
+    executable: /bin/bash
+  loop: "{{ ot_zeek_packages_optional }}"
+  register: ot_zkg_opt
+  failed_when: false
+  changed_when: "'Installing' in ot_zkg_opt.stdout or 'Installed' in ot_zkg_opt.stdout"
+  notify: Deploy zeek
+
+- name: OT lab Zeek detections
+  ansible.builtin.copy:
+    src: ot-lab.zeek
+    dest: /opt/zeek/share/zeek/site/ot-lab.zeek
+    mode: "0644"
+  notify: Deploy zeek
+
+- name: OT lab site config (allow-lists, JSON logs, BPF)
+  ansible.builtin.template:
+    src: otlab-site.zeek.j2
+    dest: /opt/zeek/share/zeek/site/otlab-site.zeek
+    mode: "0644"
+  notify: Deploy zeek
+
+- name: Load lab config from local.zeek
+  ansible.builtin.lineinfile:
+    path: /opt/zeek/share/zeek/site/local.zeek
+    line: "{{ item }}"
+  loop:
+    - "@load packages"
+    - "@load ./otlab-site.zeek"
+  notify: Deploy zeek
+
+- name: Zeek systemd unit
+  ansible.builtin.copy:
+    src: zeek.service
+    dest: /etc/systemd/system/zeek.service
+    mode: "0644"
+
+- name: zeekctl cron (restarts crashed workers, rotates logs)
+  ansible.builtin.copy:
+    dest: /etc/cron.d/zeekctl
+    mode: "0644"
+    content: "*/5 * * * * root /opt/zeek/bin/zeekctl cron\n"
+
+- name: Enable Zeek
+  ansible.builtin.systemd:
+    name: zeek
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ot_span_present

@@ -1,0 +1,30 @@
+---
+- name: Base packages
+  ansible.builtin.apt:
+    name: [curl, gnupg, ethtool, tcpdump, jq, git, cmake, make, g++, libpcap-dev, python3]
+    state: present
+    update_cache: true
+
+- name: Check for SPAN interface
+  ansible.builtin.set_fact:
+    ot_span_present: "{{ ot_sensor_span_iface in ansible_interfaces }}"
+
+- name: Warn if SPAN NIC is missing
+  ansible.builtin.debug:
+    msg: >-
+      {{ ot_sensor_span_iface }} not found. Run scripts/ludus-host/ot-span.sh setup
+      on the Ludus host, then re-run this role:
+      ludus range deploy -t user-defined-roles --limit <range_id>-ot-sensor
+  when: not ot_span_present
+
+- name: SPAN interface
+  ansible.builtin.import_tasks: span.yml
+
+- name: Zeek
+  ansible.builtin.import_tasks: zeek.yml
+
+- name: Suricata
+  ansible.builtin.import_tasks: suricata.yml
+
+- name: Rolling pcap
+  ansible.builtin.import_tasks: pcap.yml

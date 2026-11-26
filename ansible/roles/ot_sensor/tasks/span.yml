@@ -1,0 +1,14 @@
+---
+- name: SPAN interface unit (promisc, no IP, offloads off)
+  ansible.builtin.template:
+    src: span-iface.service.j2
+    dest: /etc/systemd/system/span-iface.service
+    mode: "0644"
+
+- name: Enable SPAN interface unit
+  ansible.builtin.systemd:
+    name: span-iface
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ot_span_present

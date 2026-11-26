@@ -1,0 +1,83 @@
+---
+- name: Enable backports (Suricata 7.x on Debian 12)
+  ansible.builtin.apt_repository:
+    repo: "deb http://deb.debian.org/debian {{ ansible_distribution_release }}-backports main"
+    filename: backports
+    state: present
+  when: ansible_distribution_release == 'bookworm'
+
+- name: Install Suricata
+  block:
+    - name: Install Suricata from backports
+      ansible.builtin.apt:
+        name: [suricata, suricata-update]
+        default_release: "{{ ansible_distribution_release }}-backports"
+        state: present
+        update_cache: true
+  rescue:
+    - name: Fall back to the stable Suricata package
+      ansible.builtin.apt:
+        name: [suricata, suricata-update]
+        state: present
+
+- name: Rules directory
+  ansible.builtin.file:
+    path: /etc/suricata/rules
+    state: directory
+    mode: "0755"
+
+- name: OT lab Suricata rules
+  ansible.builtin.template:
+    src: ot-lab.rules.j2
+    dest: /etc/suricata/rules/ot-lab.rules
+    mode: "0644"
+  register: ot_suri_rules
+
+- name: Capture BPF
+  ansible.builtin.copy:
+    dest: /etc/suricata/capture.bpf
+    mode: "0644"
+    content: "{{ ot_sensor_bpf }}\n"
+  notify: Restart suricata
+
+- name: Check for built ruleset
+  ansible.builtin.stat:
+    path: /var/lib/suricata/rules/suricata.rules
+  register: ot_suri_built
+
+- name: Build ruleset (ET Open + OT lab rules)
+  ansible.builtin.command:
+    cmd: suricata-update --local /etc/suricata/rules/ot-lab.rules --no-test
+  register: ot_suri_update
+  changed_when: true
+  when: ot_suri_rules is changed or not ot_suri_built.stat.exists
+  notify: Restart suricata
+
+- name: Unit override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/suricata.service.d
+    state: directory
+    mode: "0755"
+
+- name: Override unit (af-packet on SPAN, ICS parsers on, lab rules)
+  ansible.builtin.template:
+    src: suricata-override.conf.j2
+    dest: /etc/systemd/system/suricata.service.d/override.conf
+    mode: "0644"
+  notify: Restart suricata
+
+- name: Weekly ET Open refresh
+  ansible.builtin.copy:
+    dest: /etc/cron.d/suricata-update
+    mode: "0644"
+    content: >
+      30 3 * * 0 root suricata-update --local /etc/suricata/rules/ot-lab.rules
+      && systemctl restart suricata
+
+- name: Enable Suricata
+  ansible.builtin.systemd:
+    name: suricata
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: ot_span_present

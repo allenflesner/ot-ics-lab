@@ -1,0 +1,17 @@
+# Managed by ot_sensor role
+[Unit]
+After=span-iface.service
+Requires=span-iface.service
+
+[Service]
+Type=simple
+PIDFile=
+ExecStart=
+ExecStart=/usr/bin/suricata -c /etc/suricata/suricata.yaml \
+  --af-packet={{ ot_sensor_span_iface }} \
+  -S /var/lib/suricata/rules/suricata.rules \
+  -F /etc/suricata/capture.bpf \
+  --set vars.address-groups.HOME_NET=[{{ ot_sensor_home_net }}] \
+  --set app-layer.protocols.modbus.enabled=yes \
+  --set app-layer.protocols.dnp3.enabled=yes \
+  --set app-layer.protocols.enip.enabled=yes

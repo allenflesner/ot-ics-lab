@@ -1,0 +1,14 @@
+[Unit]
+Description=OT lab SPAN interface ({{ ot_sensor_span_iface }}) - promisc, no IP, offloads off
+After=network-pre.target
+Before=zeek.service suricata.service pcap-ring.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/ip addr flush dev {{ ot_sensor_span_iface }}
+ExecStart=/usr/sbin/ip link set {{ ot_sensor_span_iface }} arp off promisc on up
+ExecStart=-/usr/sbin/ethtool -K {{ ot_sensor_span_iface }} gro off lro off gso off tso off rx off tx off
+
+[Install]
+WantedBy=multi-user.target
