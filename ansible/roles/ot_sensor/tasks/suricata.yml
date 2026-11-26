@@ -51,6 +51,13 @@
     regexp: 'modbus:\s*\n\s*enabled: no'
     replace: "modbus:\n      enabled: yes"
 
+- name: Log Modbus transactions in Suricata eve-log (lab)
+  ansible.builtin.blockinfile:
+    path: /etc/suricata/suricata.yaml
+    insertafter: '^        - flow$'
+    marker: "# {mark} OT lab modbus eve-log"
+    block: "        - modbus:\n            enabled: yes\n"
+
 - name: Lab rule enable list for suricata-update
   ansible.builtin.copy:
     src: enable.conf
