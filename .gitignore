@@ -1,0 +1,19 @@
+# Secrets and local overrides
+.env
+*.local.yml
+ludus/*.local.yml
+enrollment_token.txt
+
+# Captures and evidence that may contain credentials
+*.pcap
+*.pcap[0-9]*
+*.pcapng
+journal/evidence/*.pcap*
+
+# Python / editors
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+.DS_Store
