@@ -1,0 +1,49 @@
+name: lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linters
+        run: pip install yamllint ansible-core ansible-lint
+
+      - name: YAML
+        run: yamllint -c .yamllint .
+
+      - name: Ansible syntax
+        run: |
+          for r in ansible/roles/*/; do
+            printf -- '- hosts: localhost\n  gather_facts: false\n  roles: [%s]\n' "$(basename "$r")" > /tmp/play.yml
+            ANSIBLE_ROLES_PATH=ansible/roles ansible-playbook --syntax-check /tmp/play.yml
+          done
+
+      - name: ansible-lint (advisory)
+        run: ansible-lint ansible/roles || true
+
+      - name: Shell
+        run: shellcheck scripts/**/*.sh scripts/*.sh
+
+      - name: Python
+        run: python -m py_compile src/*.py attacks/*.py ansible/roles/*/files/*.py
+
+      - name: Shared library in sync
+        run: ./scripts/sync-shared.sh --check
+
+      - name: Detection rules are valid JSON with required fields
+        run: |
+          for f in detections/elastic/rules/*.json; do
+            jq -e '.rule_id and .name and .type and .risk_score and .severity' "$f" > /dev/null || { echo "bad: $f"; exit 1; }
+          done
+
+      - name: Modbus process self-test
+        run: python tests/test_process.py
