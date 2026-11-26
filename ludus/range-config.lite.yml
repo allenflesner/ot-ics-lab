@@ -1,0 +1,161 @@
+# yaml-language-server: $schema=https://docs.ludus.cloud/schemas/range-config.json
+#
+# OT-ICS Lab - LITE profile (~30 GB RAM, ~18 vCPU) - no Windows templates needed.
+# Same Purdue layout as the full profile minus the EWS and corporate workstation.
+# Kali stands in for a compromised corporate host (it may SSH to the IDMZ jump).
+
+ludus:
+  - vm_name: "{{ range_id }}-elastic"
+    hostname: "{{ range_id }}-elastic"
+    template: debian-12-x64-server-template
+    vlan: 50
+    ip_last_octet: 10
+    ram_gb: 10
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - badsectorlabs.ludus_elastic_container
+    role_vars:
+      ludus_elastic_password: "ChangeMe-OTlab-2026"
+      ludus_elastic_stack_version: "8.17.4"
+
+  - vm_name: "{{ range_id }}-ot-sensor"
+    hostname: "{{ range_id }}-ot-sensor"
+    template: debian-12-x64-server-template
+    vlan: 50
+    ip_last_octet: 20
+    ram_gb: 6
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ot_sensor
+      - badsectorlabs.ludus_elastic_agent
+
+  - vm_name: "{{ range_id }}-ot-plc"
+    hostname: "{{ range_id }}-ot-plc"
+    template: debian-12-x64-server-template
+    vlan: 40
+    ip_last_octet: 10
+    ram_gb: 2
+    cpus: 2
+    linux: true
+    roles:
+      - ot_openplc
+      - badsectorlabs.ludus_elastic_agent
+
+  - vm_name: "{{ range_id }}-ot-field"
+    hostname: "{{ range_id }}-ot-field"
+    template: debian-12-x64-server-template
+    vlan: 40
+    ip_last_octet: 20
+    ram_gb: 1
+    cpus: 1
+    linux: true
+    roles:
+      - ot_field_sim
+      - badsectorlabs.ludus_elastic_agent
+
+  - vm_name: "{{ range_id }}-ot-hmi"
+    hostname: "{{ range_id }}-ot-hmi"
+    template: debian-12-x64-server-template
+    vlan: 30
+    ip_last_octet: 10
+    ram_gb: 2
+    cpus: 2
+    linux: true
+    roles:
+      - ot_hmi
+      - badsectorlabs.ludus_elastic_agent
+
+  - vm_name: "{{ range_id }}-ot-jump"
+    hostname: "{{ range_id }}-ot-jump"
+    template: debian-12-x64-server-template
+    vlan: 20
+    ip_last_octet: 10
+    ram_gb: 1
+    cpus: 1
+    linux: true
+    roles:
+      - ot_jumphost
+      - badsectorlabs.ludus_elastic_agent
+
+  - vm_name: "{{ range_id }}-kali"
+    hostname: "{{ range_id }}-kali"
+    template: kali-x64-desktop-template
+    vlan: 99
+    ip_last_octet: 10
+    ram_gb: 6
+    cpus: 4
+    linux:
+      packages:
+        - python3
+        - nmap
+        - wireshark
+        - ettercap-text-only
+        - dsniff
+
+global_role_vars:
+  ludus_elastic_agent_version: "8.17.4"
+
+network:
+  inter_vlan_default: REJECT
+  external_default: ACCEPT
+  wireguard_vlan_default: ACCEPT
+  rules:
+    - name: Agents to Fleet and Elasticsearch
+      vlan_src: all
+      vlan_dst: 50
+      ip_last_octet_dst: 10
+      protocol: tcp
+      ports: "8220,9200"
+      action: ACCEPT
+    - name: Compromised corp (Kali) to IDMZ jump SSH
+      vlan_src: 99
+      vlan_dst: 20
+      ip_last_octet_dst: 10
+      protocol: tcp
+      ports: 22
+      action: ACCEPT
+    - name: IDMZ jump to HMI web
+      vlan_src: 20
+      ip_last_octet_src: 10
+      vlan_dst: 30
+      ip_last_octet_dst: 10
+      protocol: tcp
+      ports: 8080
+      action: ACCEPT
+    - name: HMI to PLC Modbus
+      vlan_src: 30
+      ip_last_octet_src: 10
+      vlan_dst: 40
+      ip_last_octet_dst: 10
+      protocol: tcp
+      ports: 502
+      action: ACCEPT
+    # Lite has no EWS, so the jump host doubles as the engineering path.
+    - name: IDMZ jump to PLC programming (lite only - deliberate weakness)
+      vlan_src: 20
+      ip_last_octet_src: 10
+      vlan_dst: 40
+      ip_last_octet_dst: 10
+      protocol: tcp
+      ports: "502,8080"
+      action: ACCEPT
+    # --- SCENARIO TOGGLE
+    # - name: SCENARIO assumed breach - Kali to Control
+    #   vlan_src: 99
+    #   vlan_dst: 40
+    #   protocol: all
+    #   ports: all
+    #   action: ACCEPT
+
+ludus_extensions:
+  ot_ics_lab:
+    profile: lite
+    repo_version: "0.1.0"
