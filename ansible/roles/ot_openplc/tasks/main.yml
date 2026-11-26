@@ -1,7 +1,7 @@
 ---
 - name: Install OpenPLC prerequisites
   ansible.builtin.apt:
-    name: [git, python3, sqlite3, curl, build-essential]
+    name: [ca-certificates, git, python3, sqlite3, curl, build-essential]
     state: present
     update_cache: true
 
