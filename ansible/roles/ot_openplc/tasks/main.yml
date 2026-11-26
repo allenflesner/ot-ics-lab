@@ -1,0 +1,78 @@
+---
+- name: Install OpenPLC prerequisites
+  ansible.builtin.apt:
+    name: [git, python3, sqlite3, curl, build-essential]
+    state: present
+    update_cache: true
+
+- name: Clone OpenPLC v3
+  ansible.builtin.git:
+    repo: "{{ ot_openplc_repo }}"
+    dest: "{{ ot_openplc_dir }}"
+    version: "{{ ot_openplc_version }}"
+    update: false
+
+- name: Run OpenPLC installer (10-25 minutes; compiles the runtime)
+  ansible.builtin.command:
+    cmd: ./install.sh linux
+    chdir: "{{ ot_openplc_dir }}"
+    creates: "{{ ot_openplc_dir }}/.otlab_installed"
+  async: 3600
+  poll: 30
+  register: ot_openplc_install
+
+- name: Mark OpenPLC install complete
+  ansible.builtin.file:
+    path: "{{ ot_openplc_dir }}/.otlab_installed"
+    state: touch
+    mode: "0644"
+  when: ot_openplc_install is changed
+
+- name: Ensure OpenPLC service is enabled and running
+  ansible.builtin.systemd:
+    name: openplc
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for OpenPLC web UI
+  ansible.builtin.wait_for:
+    port: "{{ ot_openplc_web_port }}"
+    timeout: 300
+
+- name: Create lab directory
+  ansible.builtin.file:
+    path: /opt/ot-lab
+    state: directory
+    mode: "0755"
+
+- name: Stage lab files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/opt/ot-lab/{{ item }}"
+    mode: "0755"
+  loop: [water_tank.st, deploy_program.py]
+
+- name: Upload, compile and start the water tank program
+  ansible.builtin.command:
+    cmd: >-
+      python3 /opt/ot-lab/deploy_program.py
+      --url http://127.0.0.1:{{ ot_openplc_web_port }}
+      --user {{ ot_openplc_user }} --password {{ ot_openplc_password }}
+      --program /opt/ot-lab/water_tank.st
+      --name "{{ ot_openplc_program_name }}"
+      --db {{ ot_openplc_dir }}/webserver/openplc.db
+    creates: /opt/ot-lab/.program_deployed
+  register: ot_openplc_deploy
+
+- name: Record program deployment
+  ansible.builtin.copy:
+    dest: /opt/ot-lab/.program_deployed
+    content: "{{ ot_openplc_deploy.stdout | default('') }}\n"
+    mode: "0644"
+  when: ot_openplc_deploy is changed
+
+- name: Wait for Modbus/TCP server on 502
+  ansible.builtin.wait_for:
+    port: 502
+    timeout: 120

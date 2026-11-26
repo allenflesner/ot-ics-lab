@@ -1,0 +1,37 @@
+---
+ot_net_prefix: "{{ ansible_default_ipv4.address.split('.')[0:2] | join('.') }}"
+
+# Second NIC added by scripts/ludus-host/ot-span.sh (net1 -> ens19 in guest)
+ot_sensor_span_iface: ens19
+ot_sensor_home_net: "{{ ot_net_prefix }}.0.0/16"
+
+# Hide Elastic Agent -> Fleet/ES chatter so it doesn't drown the OT traffic.
+ot_sensor_bpf: "not (tcp port 8220 or tcp port 9200)"
+
+# Known OT assets (feed Zeek allow-lists and Suricata rule templates)
+ot_assets:
+  plc: "{{ ot_net_prefix }}.40.10"
+  field_io: "{{ ot_net_prefix }}.40.20"
+  hmi: "{{ ot_net_prefix }}.30.10"
+  ews: "{{ ot_net_prefix }}.30.20"
+  jump: "{{ ot_net_prefix }}.20.10"
+ot_nets:
+  enterprise: "{{ ot_net_prefix }}.10.0/24"
+  idmz: "{{ ot_net_prefix }}.20.0/24"
+  supervisory: "{{ ot_net_prefix }}.30.0/24"
+  control: "{{ ot_net_prefix }}.40.0/24"
+  soc: "{{ ot_net_prefix }}.50.0/24"
+  attacker: "{{ ot_net_prefix }}.99.0/24"
+
+# Ludus management networks (NAT net + WireGuard) - exempt from conduit alerts
+ot_ludus_mgmt_nets: [192.0.2.0/24, 198.51.100.0/24]
+
+# Zeek packages. Script-only packages are required; Spicy/compiled parsers
+# are best-effort (they take a while to build and can lag Zeek releases).
+ot_zeek_packages_required: [icsnpp-modbus, icsnpp-dnp3]
+ot_zeek_packages_optional: [icsnpp-enip, icsnpp-s7comm, icsnpp-bacnet, ACID]
+
+# Rolling full-packet capture for Wireshark (50 x 100 MB ring)
+ot_pcap_dir: /var/pcap
+ot_pcap_file_mb: 100
+ot_pcap_files: 50

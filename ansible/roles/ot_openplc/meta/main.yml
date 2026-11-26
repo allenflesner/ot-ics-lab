@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: ot_openplc
+  author: allen
+  description: OpenPLC v3 soft-PLC running the OT-ICS lab water tank program (Purdue Level 1)
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions: [bookworm]
+dependencies: []

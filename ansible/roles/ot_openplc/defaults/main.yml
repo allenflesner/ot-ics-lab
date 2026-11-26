@@ -1,0 +1,10 @@
+---
+ot_openplc_repo: https://github.com/thiagoralves/OpenPLC_v3.git
+ot_openplc_version: master
+ot_openplc_dir: /opt/OpenPLC_v3
+ot_openplc_web_port: 8080
+# Default creds are left in place on purpose: scenario 04 abuses them.
+# Flip to a strong value once you have run that scenario (hardening exercise).
+ot_openplc_user: openplc
+ot_openplc_password: openplc
+ot_openplc_program_name: Water Tank Control

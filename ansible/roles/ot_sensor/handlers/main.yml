@@ -1,0 +1,20 @@
+---
+- name: Deploy zeek
+  ansible.builtin.command:
+    cmd: /opt/zeek/bin/zeekctl deploy
+  changed_when: true
+  when: ot_span_present
+
+- name: Restart suricata
+  ansible.builtin.systemd:
+    name: suricata
+    state: restarted
+    daemon_reload: true
+  when: ot_span_present
+
+- name: Restart pcap-ring
+  ansible.builtin.systemd:
+    name: pcap-ring
+    state: restarted
+    daemon_reload: true
+  when: ot_span_present

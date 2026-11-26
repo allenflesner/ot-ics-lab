@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: ot_sensor
+  author: allen
+  description: Passive OT network sensor - Zeek + CISA ICSNPP parsers, Suricata with ICS app-layer, rolling pcap
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions: [bookworm]
+dependencies: []
