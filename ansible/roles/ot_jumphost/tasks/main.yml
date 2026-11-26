@@ -1,0 +1,43 @@
+---
+- name: Install admin tooling an operator would expect
+  ansible.builtin.apt:
+    name: [openssh-server, python3, curl, netcat-openbsd, freerdp2-x11, auditd]
+    state: present
+    update_cache: true
+
+- name: Create jump user
+  ansible.builtin.user:
+    name: "{{ ot_jump_user }}"
+    shell: /bin/bash
+    password: "{{ ot_jump_password | password_hash('sha512', 'otlabsalt') }}"
+    update_password: always
+
+- name: Configure sshd for the lab
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-otlab.conf
+    mode: "0644"
+    content: |
+      # Managed by ot_jumphost role
+      PasswordAuthentication {{ 'yes' if ot_jump_allow_password_auth else 'no' }}
+      LogLevel VERBOSE
+      Banner /etc/issue.net
+  notify: Restart ssh
+
+- name: Login banner
+  ansible.builtin.copy:
+    dest: /etc/issue.net
+    mode: "0644"
+    content: |
+      *** IDMZ JUMP HOST - AUTHORIZED PLANT PERSONNEL ONLY ***
+      All sessions are monitored and recorded.
+
+- name: Leave a realistic breadcrumb for the pivot scenario
+  ansible.builtin.copy:
+    dest: "/home/{{ ot_jump_user }}/README-ops.txt"
+    owner: "{{ ot_jump_user }}"
+    mode: "0644"
+    content: |
+      Operations notes
+      - HMI-01 web: http://{{ ansible_default_ipv4.address.split('.')[0:2] | join('.') }}.30.10:8080
+      - EWS-01 RDP: {{ ansible_default_ipv4.address.split('.')[0:2] | join('.') }}.30.20
+      - PLC-01 programming is from EWS-01 only.

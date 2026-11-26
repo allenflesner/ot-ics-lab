@@ -1,0 +1,17 @@
+[Unit]
+Description=OT-ICS lab - water tank physics and remote field I/O
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=otfield
+Environment=OT_PLC_IP={{ ot_plc_ip }}
+Environment=OT_SIM_INTERVAL={{ ot_sim_interval }}
+Environment=OT_PROCESS_LOG={{ ot_sim_log_dir }}/process.jsonl
+WorkingDirectory={{ ot_sim_dir }}
+ExecStart=/usr/bin/python3 {{ ot_sim_dir }}/field_sim.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

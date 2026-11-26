@@ -1,0 +1,7 @@
+---
+# 10.<range_second_octet> derived from the VM's own address
+ot_net_prefix: "{{ ansible_default_ipv4.address.split('.')[0:2] | join('.') }}"
+ot_plc_ip: "{{ ot_net_prefix }}.40.10"
+ot_sim_interval: 1.0
+ot_sim_dir: /opt/ot-field
+ot_sim_log_dir: /var/log/ot-process

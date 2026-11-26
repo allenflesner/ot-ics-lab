@@ -1,0 +1,60 @@
+---
+- name: Install python3
+  ansible.builtin.apt:
+    name: [python3]
+    state: present
+    update_cache: true
+
+- name: Create service user
+  ansible.builtin.user:
+    name: otfield
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: otfield
+    group: otfield
+    mode: "0755"
+  loop:
+    - "{{ ot_sim_dir }}"
+    - "{{ ot_sim_log_dir }}"
+
+- name: Install simulator
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ ot_sim_dir }}/{{ item }}"
+    mode: "0755"
+  loop: [mbtcp.py, field_sim.py]
+  notify: Restart ot-field-sim
+
+- name: Install systemd unit
+  ansible.builtin.template:
+    src: ot-field-sim.service.j2
+    dest: /etc/systemd/system/ot-field-sim.service
+    mode: "0644"
+  notify: Restart ot-field-sim
+
+- name: Rotate process log
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/ot-process
+    mode: "0644"
+    content: |
+      {{ ot_sim_log_dir }}/*.jsonl {
+        daily
+        rotate 7
+        compress
+        missingok
+        notifempty
+        copytruncate
+      }
+
+- name: Enable and start simulator
+  ansible.builtin.systemd:
+    name: ot-field-sim
+    enabled: true
+    state: started
+    daemon_reload: true

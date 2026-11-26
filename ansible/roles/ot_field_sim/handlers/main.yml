@@ -1,0 +1,6 @@
+---
+- name: Restart ot-field-sim
+  ansible.builtin.systemd:
+    name: ot-field-sim
+    state: restarted
+    daemon_reload: true

@@ -1,0 +1,6 @@
+---
+# IDMZ jump host. The weak, reused credential is intentional (scenario 07).
+# Rotate it as part of the hardening exercise once you've run that scenario.
+ot_jump_user: otjump
+ot_jump_password: "Plant2026!"
+ot_jump_allow_password_auth: true
