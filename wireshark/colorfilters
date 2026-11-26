@@ -1,0 +1,13 @@
+# OT-ICS lab Wireshark coloring rules.
+# Install: copy into a new profile folder, e.g.
+#   Linux/Kali: ~/.config/wireshark/profiles/OT-Lab/colorfilters
+#   Windows:    %APPDATA%\Wireshark\profiles\OT-Lab\colorfilters
+# then Edit > Configuration Profiles > OT-Lab. Format: @name@filter@[fg][bg]
+@Modbus EXCEPTION@modbus.exception_code@[65535,65535,65535][45000,0,0]
+@Modbus WRITE (5/6/15/16)@mbtcp && modbus.func_code in {5 6 15 16 22 23}@[0,0,0][65535,40000,0]
+@Modbus DIAG / DEVICE-ID (8/17/43)@mbtcp && modbus.func_code in {8 17 43}@[65535,65535,65535][40000,0,50000]
+@Modbus READ@mbtcp && modbus.func_code in {1 2 3 4}@[0,0,0][52000,60000,65535]
+@OpenPLC web@tcp.port == 8080 && http@[0,0,0][65535,55000,40000]
+@ARP (watch for spoofing)@arp@[0,0,0][60000,65535,45000]
+@TCP RST@tcp.flags.reset == 1@[65535,65535,65535][30000,30000,30000]
+@TCP SYN@tcp.flags.syn == 1 && tcp.flags.ack == 0@[0,0,0][62000,62000,62000]
