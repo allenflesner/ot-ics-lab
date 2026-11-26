@@ -1,0 +1,28 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0009-write-without-hmi-audit",
+  "name": "OT Lab - PLC write with no matching HMI operator action",
+  "description": "A Modbus write from the HMI host was observed on the wire but no operator command was logged by the HMI application in the same minute. Indicates HMI host compromise or traffic injection (spoofing from the HMI IP).",
+  "type": "esql",
+  "language": "esql",
+  "risk_score": 73,
+  "severity": "high",
+  "query": "FROM logs-zeek.modbus-*, logs-ot_hmi_audit* METADATA _index\n| WHERE (zeek.modbus.function LIKE \"WRITE*\" AND source.ip == TO_IP(\"__NET__.30.10\")) OR event.action == \"hmi-operator-command\"\n| EVAL minute = DATE_TRUNC(1 minute, @timestamp), is_wire = CASE(_index LIKE \"*zeek*\", 1, 0), is_audit = CASE(_index LIKE \"*ot_hmi_audit*\", 1, 0)\n| STATS wire_writes = SUM(is_wire), audited = SUM(is_audit) BY minute\n| WHERE wire_writes > 0 AND audited == 0",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0856 Spoof Reporting Message",
+    "ATT&CK-ICS: T0830 Adversary-in-the-Middle",
+    "Data Source: Zeek",
+    "Data Source: HMI"
+  ],
+  "note": "Requires the HMI audit custom log (docs/04-elastic.md). Expect minor FPs at minute boundaries; widen to 2 minutes if noisy."
+}

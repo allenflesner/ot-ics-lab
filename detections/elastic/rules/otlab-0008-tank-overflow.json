@@ -1,0 +1,28 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0008-tank-overflow",
+  "name": "OT Lab - Physical process: tank overflow",
+  "description": "The field I/O simulator (process ground truth) reports an overflow. This is the 'impact' signal - correlate backwards to find the command that caused it.",
+  "type": "esql",
+  "language": "esql",
+  "risk_score": 99,
+  "severity": "critical",
+  "query": "FROM logs-ot_process* METADATA _id, _index\n| WHERE tank.overflow == true\n| STATS events = COUNT(*), max_level = MAX(tank.level), first_seen = MIN(@timestamp) BY host.name",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0879 Damage to Property",
+    "ATT&CK-ICS: T0880 Loss of Safety",
+    "Tactic: Impact",
+    "Data Source: Process"
+  ],
+  "note": "Work backwards: Timeline -> Zeek modbus writes to __NET__.40.10 in the 10 minutes before `first_seen`, then compare against `logs-ot_hmi_audit*`."
+}

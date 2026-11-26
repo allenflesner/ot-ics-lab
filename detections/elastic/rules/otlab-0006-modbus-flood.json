@@ -1,0 +1,35 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0006-modbus-flood",
+  "name": "OT Lab - Modbus request flood against PLC",
+  "description": "More than 500 Modbus transactions from one source in the rule window. Request floods can starve a PLC's communication stack and blind the HMI (loss of view).",
+  "type": "threshold",
+  "language": "kuery",
+  "risk_score": 73,
+  "severity": "high",
+  "index": [
+    "logs-zeek.modbus-*"
+  ],
+  "query": "destination.ip: \"__NET__.40.10\"",
+  "threshold": {
+    "field": [
+      "source.ip"
+    ],
+    "value": 500
+  },
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0814 Denial of Service",
+    "ATT&CK-ICS: T0829 Loss of View",
+    "Data Source: Zeek"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0003-conduit-violation",
+  "name": "OT Lab - Purdue conduit violation into control zone",
+  "description": "A connection reached the Level 1 control network from a zone other than Supervisory (L2-3). Every legitimate path into Level 1 goes through the HMI or EWS; anything else means segmentation has failed or been bypassed.",
+  "type": "query",
+  "language": "kuery",
+  "risk_score": 73,
+  "severity": "high",
+  "index": [
+    "logs-zeek.connection-*"
+  ],
+  "query": "destination.ip: \"__NET__.40.0/24\" and not source.ip: (\"__NET__.30.0/24\" or \"__NET__.40.0/24\" or \"__NET__.50.0/24\" or \"192.0.2.0/24\" or \"198.51.100.0/24\")",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0886 Remote Services",
+    "Tactic: Lateral Movement",
+    "Purdue",
+    "Data Source: Zeek"
+  ]
+}

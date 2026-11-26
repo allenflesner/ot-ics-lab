@@ -1,0 +1,27 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0001-modbus-write-unauthorized",
+  "name": "OT Lab - Modbus write from unauthorized source",
+  "description": "Zeek observed a Modbus write function (coil/register) sent to a PLC from a host outside the HMI / field I/O / EWS allow-list. Unauthorized command messages are how attackers directly manipulate a physical process.",
+  "type": "esql",
+  "language": "esql",
+  "risk_score": 91,
+  "severity": "critical",
+  "query": "FROM logs-zeek.modbus-* METADATA _id, _index\n| WHERE zeek.modbus.function LIKE \"WRITE*\" AND NOT CIDR_MATCH(source.ip, \"__NET__.30.10/32\", \"__NET__.30.20/32\", \"__NET__.40.20/32\")\n| STATS writes = COUNT(*), functions = VALUES(zeek.modbus.function) BY source.ip, destination.ip\n| SORT writes DESC",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "ATT&CK-ICS: T0855 Unauthorized Command Message",
+    "Tactic: Impair Process Control",
+    "Data Source: Zeek"
+  ],
+  "note": "## Triage\n1. Is `source.ip` a new asset? Check DHCP/ARP history and Zeek `conn` for its first appearance.\n2. Compare with the HMI audit log (`logs-ot_hmi_audit*`): a legitimate write always has a matching operator action.\n3. Check the process ground truth (`logs-ot_process*`): did tank level / pump state change right after?\n4. Pull the pcap window from the sensor (`/var/pcap`) and open in Wireshark with `modbus.func_code in {5 6 15 16}`.\n\n## Response\nIsolate the source at the IDMZ/zone firewall, place the process in a known-safe state from the HMI, and verify the PLC program and setpoints against the golden baseline."
+}

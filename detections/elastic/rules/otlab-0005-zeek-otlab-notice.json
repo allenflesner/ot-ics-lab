@@ -1,0 +1,27 @@
+{
+  "author": [
+    "Allen"
+  ],
+  "license": "MIT",
+  "version": 1,
+  "enabled": true,
+  "interval": "5m",
+  "from": "now-6m",
+  "max_signals": 100,
+  "rule_id": "otlab-0005-zeek-otlab-notice",
+  "name": "OT Lab - Zeek OT notice",
+  "description": "The lab's Zeek script raised an OTLab notice (unauthorized write, unknown Modbus client, recon function, or conduit violation).",
+  "type": "query",
+  "language": "kuery",
+  "risk_score": 73,
+  "severity": "high",
+  "index": [
+    "logs-zeek.notice-*"
+  ],
+  "query": "zeek.notice.note: OTLab*",
+  "tags": [
+    "OT-ICS Lab",
+    "Domain: OT",
+    "Data Source: Zeek"
+  ]
+}
