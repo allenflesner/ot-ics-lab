@@ -1,7 +1,7 @@
 ---
 - name: Base packages
   ansible.builtin.apt:
-    name: [curl, gnupg, ethtool, tcpdump, jq, git, cmake, make, g++, libpcap-dev, python3]
+    name: [ca-certificates, curl, gnupg, ethtool, tcpdump, jq, git, cmake, make, g++, libpcap-dev, python3]
     state: present
     update_cache: true
 

@@ -45,9 +45,21 @@
     path: /var/lib/suricata/rules/suricata.rules
   register: ot_suri_built
 
+- name: Enable the Modbus parser in suricata.yaml (lab Modbus rules need it)
+  ansible.builtin.replace:
+    path: /etc/suricata/suricata.yaml
+    regexp: 'modbus:\s*\n\s*enabled: no'
+    replace: "modbus:\n      enabled: yes"
+
+- name: Lab rule enable list for suricata-update
+  ansible.builtin.copy:
+    src: enable.conf
+    dest: /etc/suricata/enable.conf
+    mode: "0644"
+
 - name: Build ruleset (ET Open + OT lab rules)
   ansible.builtin.command:
-    cmd: suricata-update --local /etc/suricata/rules/ot-lab.rules --no-test
+    cmd: suricata-update --local /etc/suricata/rules/ot-lab.rules --enable-conf /etc/suricata/enable.conf --no-test
   register: ot_suri_update
   changed_when: true
   when: ot_suri_rules is changed or not ot_suri_built.stat.exists

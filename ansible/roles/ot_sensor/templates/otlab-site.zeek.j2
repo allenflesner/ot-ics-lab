@@ -19,3 +19,6 @@ redef OTLab::conduit_sources += { {{ ot_nets.supervisory }}, {{ ot_nets.control 
 # Ludus management (Ansible over the NAT / WireGuard nets). A known, documented
 # exception - in a real plant this would be your OT patching/management path.
 redef OTLab::conduit_sources += { {{ ot_ludus_mgmt_nets | join(', ') }} };
+
+# Mirrored (SPAN) frames have offloaded checksums; without this Zeek drops them.
+redef ignore_checksums = T;
