@@ -64,6 +64,12 @@
     dest: /etc/suricata/enable.conf
     mode: "0644"
 
+- name: OT lab classtype for conduit and policy alerts
+  ansible.builtin.lineinfile:
+    path: /etc/suricata/classification.config
+    line: "config classification: ot-policy-violation,OT Lab control or conduit policy violation,2"
+    regexp: '^config classification: ot-policy-violation,'
+
 - name: Build ruleset (ET Open + OT lab rules)
   ansible.builtin.command:
     cmd: suricata-update --local /etc/suricata/rules/ot-lab.rules --enable-conf /etc/suricata/enable.conf --no-test
