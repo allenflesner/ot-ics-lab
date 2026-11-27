@@ -31,13 +31,13 @@ jobs:
         run: ansible-lint ansible/roles || true
 
       - name: Shell
-        run: shellcheck scripts/**/*.sh scripts/*.sh
+        run: find scripts -name '*.sh' -print0 | xargs -0 shellcheck -S error
 
       - name: Python
         run: python -m py_compile src/*.py attacks/*.py ansible/roles/*/files/*.py
 
       - name: Shared library in sync
-        run: ./scripts/sync-shared.sh --check
+        run: bash ./scripts/sync-shared.sh --check
 
       - name: Detection rules are valid JSON with required fields
         run: |
